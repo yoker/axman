@@ -391,7 +391,7 @@ int scan_clsid(TCHAR* achKey) {
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 
-	_sntprintf_s(cmd, 4096, 4096-1, _T("%s GO %s"), mod, achKey);
+	_sntprintf_s(cmd, 4096, 4096-1, _T("%s GET DETAIL %s"), mod, achKey);
 
 	fflush(output);
 
@@ -425,6 +425,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (argc <= 1) {
 		fprintf(stderr, "Usage: axman [output-directory]\n");
+		fprintf(stderr, "       axman [output-directory] [specified-clsid]\n");
 		exit(0);
 	}
 
@@ -486,11 +487,40 @@ int _tmain(int argc, _TCHAR* argv[])
 		return(0);
 	}
 
+	if(argc <=3 ){
+
+		// Copy the output directory name
+		_tcscpy_s(outdir, MAX_PATH, argv[1]);
+		// Copy the clsid
+		_tcscpy_s(achKey, MAX_PATH, argv[2]);
+
+		// Attempt to create it 
+		CreateDirectory(outdir, NULL);
+
+		// Attempt to enter it
+		if (! SetCurrentDirectory(outdir)) {
+			fprintf(stderr, "Error: could not create and enter the output directory\n");
+			exit(0);
+		}
+		// Open the top-level objects.js
+		output = fopen("objects.js", "w");
+
+		/* Initialize the script arrays */
+		fprintf(output, "var ax_objects = new Array(\n");
+		fprintf(output, _T("\t'%s'\n"), achKey);
+		scan_clsid(achKey);
+		fprintf(output, ");\n");
+		fflush(output);
+		fclose(output);
+
+		return(0);
+	}
+
 	// Init OLE
 	CoInitialize(NULL);
 
 	// Call the enumerator
-	view_clsid(argv[2]);
+	view_clsid(argv[3]);
 
 	// Free OLE
 	CoUninitialize();
